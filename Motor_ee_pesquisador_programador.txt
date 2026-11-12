@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOTOR e>e</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080d18;color:#e8f2ff;font-family:Arial,sans-serif;padding:18px}
+main{max-width:850px;margin:auto}
+h1{color:#38e8bd;letter-spacing:3px;margin-bottom:5px}
+h2{font-size:14px;color:#59aaff;margin-top:0}
+.panel{background:#111c2d;border:1px solid #29415c;border-radius:10px;padding:16px;margin:14px 0}
+input,textarea{width:100%;background:#071322;color:#38e8bd;border:1px solid #34516d;border-radius:7px;padding:12px;font:14px monospace}
+textarea{height:150px;resize:vertical}
+button{padding:10px 16px;margin:8px 5px 0 0;border:0;border-radius:7px;background:#38e8bd;color:#050a12;font-weight:bold;cursor:pointer}
+.output{background:#050a12;border:1px dashed #38e8bd;padding:15px;border-radius:7px;margin-top:12px;min-height:60px}
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>MOTOR e&gt;e</h1>
+</header>
+
+<section class="panel">
+  <h2>01 — PESQUISA WEB</h2>
+  <form action="https://duckduckgo.com" method="GET" target="_blank">
+    <input name="q" type="search" placeholder="Pesquisar na Internet..." required>
+    <button type="submit">PESQUISAR ↗</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>02 — MOTOR HTML / JS (e&gt;e)</h2>
+  <textarea id="editor" spellcheck="false">const e>e = document.getElementById( e>e );
+e>e.html = `Resultado: ${23*3} exemplo`;</textarea>
+  
+  <button id="run">▶ EXECUTAR</button>
+
+  <div class="output">
+    <div id="e>e"></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+function rodarMotor() {
+  const codigo = document.getElementById("editor").value;
+
+  const traduzido = codigo
+    .replace(/const\s+e>e\s*=\s*document\.getElementById\(\s*e>e\s*\)\s*;/g, 'const e_gt_e = document.getElementById("e>e");')
+    .replace(/e>e\.html\s*=/g, 'e_gt_e.innerHTML =');
+
+  new Function(traduzido)();
+}
+
+document.getElementById("run").onclick = rodarMotor;
+rodarMotor();
+</script>
+
+</body>
+</html>
