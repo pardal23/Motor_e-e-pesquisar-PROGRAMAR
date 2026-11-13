@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'none'; form-action https://duckduckgo.com;">
+<title>MOTOR e&gt;e</title>
+<style>
+*{box-sizing:border-box;font-family:sans-serif}
+body{margin:0;background:#080d18;color:#e8f2ff;padding:15px}
+main{max-width:800px;margin:auto}
+h1,h2{color:#38e8bd;margin:0 0 10px}
+.box{background:#111c2d;border:1px solid #29415c;border-radius:8px;padding:15px;margin-bottom:15px}
+input,textarea{width:100%;background:#071322;color:#38e8bd;border:1px solid #34516d;border-radius:6px;padding:10px;font:14px monospace}
+textarea{height:140px}
+button{padding:9px 15px;margin-top:8px;border:0;border-radius:6px;background:#38e8bd;color:#050a12;font-weight:bold;cursor:pointer}
+iframe{width:100%;min-height:100px;background:#050a12;border:1px dashed #38e8bd;border-radius:6px;margin-top:10px}
+</style>
+</head>
+<body>
+<main>
+  <h1>MOTOR e&gt;e</h1>
+
+  <div class="box">
+    <h2>01 — PESQUISA WEB</h2>
+    <form action="https://duckduckgo.com" target="_blank" rel="noopener noreferrer">
+      <input name="q" type="search" placeholder="Pesquisar na Internet..." required>
+      <button>PESQUISAR ↗</button>
+    </form>
+  </div>
+
+  <div class="box">
+    <h2>02 — MOTOR HTML / JS (ee)</h2>
+    <textarea id="ed" spellcheck="false">const e>e = document.getElementById( e>e );
+e>e.html = `<h3>Resultado: ${23*3}</h3><p>Tudo seguro e a sair como HTML!</p>`;</textarea>
+    <button onclick="ee()">▶ EXECUTAR</button>
+    <iframe id="out" sandbox="allow-scripts"></iframe>
+  </div>
+</main>
+
+<script>
+function ee() {
+  const c = document.getElementById("ed").value
+    .replace(/const\s+e>e\s*=[^;]+;/g, "")
+    .replace(/e>e\.html\s*=/g, "el.innerHTML =");
+
+  document.getElementById("out").srcdoc = `
+    <style>body{margin:10px;color:#e8f2ff;font-family:sans-serif}</style>
+    <div id="el"></div>
+    <script>
+      const el = document.getElementById("el");
+      try { ${c} } catch(e) { el.innerHTML = '<span style="color:#ff5555">Erro: ' + e.message + '</span>'; }
+    <\/script>`;
+}
+</script>
+</body>
+</html>
