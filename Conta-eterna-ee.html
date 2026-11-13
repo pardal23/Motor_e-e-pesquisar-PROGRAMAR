@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<style>
+  h1 {
+    color: red;
+    text-align: center; /* Corrigido de align-center para text-align */
+  }
+  #ee {
+    text-align: center;
+    font-size: 20px;
+    font-family: monospace;
+  }
+</style>
+</head>
+<body>
+
+  <h1>Novo ser humano espirito espiritual.</h1>
+  <div id="ee"></div>
+
+  <script>
+    const ee = document.getElementById("ee");
+    
+    // Começamos com o valor inicial de 23
+    let valorAtual = 23;
+    let passo = 1;
+
+    // Esta função corre eternamente a cada 500 milissegundos (meio segundo)
+    setInterval(() => {
+      // Guarda o valor anterior para mostrar na tela
+      let anterior = valorAtual;
+      
+      // Faz a nova conta usando o resto/resultado da conta anterior
+      valorAtual = (valorAtual * 2) / 3;
+
+      // Atualiza o ecrã com a conta atual e o histórico
+      ee.innerHTML = `
+        <p><strong>Passo ${passo}:</strong> (${anterior.toFixed(4)} * 2) / 3 = <strong>${valorAtual}</strong></p>
+      ` + ee.innerHTML;
+
+      passo++;
+    }, 500);
+  </script>
+
+</body>
+</html>
