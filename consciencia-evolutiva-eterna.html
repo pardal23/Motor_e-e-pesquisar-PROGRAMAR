@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<style>
+  body {
+    margin: 0;
+    background-color: #121212;
+    color: #ffffff;
+    font-family: sans-serif;
+    overflow: hidden;
+  }
+  #titulo {
+    position: absolute;
+    top: 20px;
+    width: 100%;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #FFD700;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+  <div id="titulo">consciencia evolutiva eterna</div>
+  <canvas id="tela"></canvas>
+
+  <script>
+    const canvas = document.getElementById("tela");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Lista de palavras disponíveis para o computador combinar
+    const vocabulario = [
+      "consciencia", "evolutiva", "eterna", "luz", "caminho", 
+      "horizonte", "clareza", "movimento", "harmonia", "tempo", 
+      "espaco", "energia", "equilibrio", "mente", "natureza"
+    ];
+
+    // Variáveis para controlar o ciclo das cores RGB
+    let passoCor = 0;
+
+    // Começamos com a última palavra da frase do título
+    let ultimaPalavra = "eterna";
+
+    function gerarCorRGB() {
+      // Cores luminosas para o texto (valores entre 55 e 255)
+      const r = Math.floor(Math.sin(passoCor * 0.3) * 100 + 155);
+      const g = Math.floor(Math.sin(passoCor * 0.3 + 2) * 100 + 155);
+      const b = Math.floor(Math.sin(passoCor * 0.3 + 4) * 100 + 155);
+      passoCor++;
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function gerarCorFundoRGB() {
+      // Cores mais suaves e escuras para o fundo com transparência (0.15)
+      const r = Math.floor(Math.sin(passoCor * 0.15) * 40 + 45);
+      const g = Math.floor(Math.sin(passoCor * 0.15 + 2) * 40 + 45);
+      const b = Math.floor(Math.sin(passoCor * 0.15 + 4) * 40 + 45);
+      return `rgba(${r}, ${g}, ${b}, 0.15)`;
+    }
+
+    function gerarProximaFrase() {
+      // A nova frase começa obrigatoriamente com a última palavra da anterior
+      let frase = [ultimaPalavra];
+
+      // Adiciona mais 2 ou 3 palavras aleatórias da lista
+      const tamanho = Math.floor(Math.random() * 2) + 2;
+      for (let i = 0; i < tamanho; i++) {
+        const palavraAleatoria = vocabulario[Math.floor(Math.random() * vocabulario.length)];
+        frase.push(palavraAleatoria);
+      }
+
+      // Guarda a nova última palavra para o próximo ciclo
+      ultimaPalavra = frase[frase.length - 1];
+
+      return frase.join(" ");
+    }
+
+    function desenharNoCanvas() {
+      // Aplica o fundo em RGB alternado com transparência para ir apagando as frases antigas
+      ctx.fillStyle = gerarCorFundoRGB();
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const texto = gerarProximaFrase();
+      const x = Math.random() * (canvas.width - 300) + 50;
+      const y = Math.random() * (canvas.height - 150) + 100;
+      
+      // Aplica a cor RGB alternada ao texto
+      ctx.font = "20px monospace";
+      ctx.fillStyle = gerarCorRGB();
+      ctx.fillText(texto, x, y);
+    }
+
+    // Repete o desenho a cada 1 segundo (1000 ms)
+    setInterval(desenharNoCanvas, 1000);
+  </script>
+
+</body>
+</html>
