@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Realidade Google — GUI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+  }
+  #erro {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #da3633;
+    color: #fff;
+    padding: 8px 14px;
+    font-size: 13px;
+    z-index: 99999;
+    white-space: pre-wrap;
+  }
+  #desktop {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 56px;
+  }
+  #dica {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #8b949e;
+    font-size: 15px;
+    line-height: 1.8;
+    pointer-events: none;
+  }
+  #dica b { color: #e6edf3; font-size: 18px; }
+
+  #taskbar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 56px;
+    background: #161b22;
+    border-top: 1px solid #30363d;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    z-index: 9999;
+  }
+  #taskbar b { font-size: 15px; white-space: nowrap; }
+  #busca {
+    padding: 8px 14px;
+    width: min(460px, 55%);
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    background: #0d1117;
+    color: #e6edf3;
+    font-size: 14px;
+  }
+  #busca:focus { outline: 1px solid #58a6ff; }
+  .botao {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    background: #21262d;
+    color: #e6edf3;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .botao:hover { background: #30363d; }
+
+  .janela {
+    position: absolute;
+    width: 560px;
+    height: 400px;
+    min-width: 300px;
+    min-height: 220px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.6);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .janela.ativa { border-color: #58a6ff; }
+  .barra {
+    height: 36px;
+    min-height: 36px;
+    background: #21262d;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    cursor: move;
+    user-select: none;
+  }
+  .barra .titulo {
+    flex: 1;
+    font-size: 13px;
+    font-weight: bold;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    margin-right: 10px;
+  }
+  .btn-j {
+    background: none;
+    border: none;
+    color: #e6edf3;
+    font-size: 14px;
+    width: 28px;
+    height: 26px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .btn-j:hover { background: #30363d; }
+  .btn-j.modo-ativo { color: #58a6ff; }
+  .conteudo {
+    flex: 1;
+    position: relative;
+    background: #000;
+  }
+  .conteudo iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    pointer-events: none;
+  }
+  .overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 10px;
+    font-size: 12px;
+    color: #e6edf3;
+    background: rgba(13,17,23,.35);
+    cursor: pointer;
+  }
+  .alca {
+    position: absolute;
+    right: 0; bottom: 0;
+    width: 18px; height: 18px;
+    cursor: nwse-resize;
+    z-index: 5;
+  }
+</style>
+</head>
+<body>
+
+<div id="erro"></div>
+
+<div id="desktop">
+  <div id="dica">
+    <b>🛰️ Realidade Google</b><br>
+    Digite qualquer lugar do mundo na barra abaixo e pressione Enter.<br>
+    A janela abre no Street View do local — com satélite e mapa dentro dela.
+  </div>
+</div>
+
+<div id="taskbar">
+  <b>🌍 Google</b>
+  <input id="busca" type="text" placeholder="Ex.: Torre Eiffel, Porto, Shibuya, Av. da Liberdade 200..." autofocus>
+  <button class="botao" onclick="pesquisar()">🚶 Ver na rua</button>
+</div>
+
+<script>
+window.onerror = function (msg) {
+  var e = document.getElementById("erro");
+  e.style.display = "block";
+  e.textContent = "Erro de script: " + msg;
+};
+
+var contador = 0;
+var desktop = document.getElementById("desktop");
+
+function trazerFrente(j) {
+  var todas = document.querySelectorAll(".janela");
+  for (var i = 0; i < todas.length; i++) todas[i].classList.remove("ativa");
+  contador++;
+  j.classList.add("ativa");
+  j.style.zIndex = 100 + contador;
+}
+
+// Converte o que o usuário digitou em coordenadas (sem chave, sem login).
+// Nominatim (OpenStreetMap) é gratuito e aceita pedidos do navegador.
+function geocodificar(termo, callback) {
+  var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
+    encodeURIComponent(termo);
+  fetch(url)
+    .then(function (r) { return r.json(); })
+    .then(function (dados) {
+      if (dados && dados.length > 0) {
+        callback({ lat: dados[0].lat, lng: dados[0].lon, nome: dados[0].display_name });
+      } else {
+        callback(null);
+      }
+    })
+    .catch(function () { callback(null); });
+}
+
+function abrirJanela(termo, coords) {
+  var dica = document.getElementById("dica");
+  if (dica) dica.remove();
+
+  var j = document.createElement("div");
+  j.className = "janela";
+  j.style.left = (30 + (contador % 6) * 45) + "px";
+  j.style.top  = (25 + (contador % 4) * 38) + "px";
+  j.style.zIndex = 100 + contador;
+  contador++;
+
+  var titulo = coords ? coords.nome : termo;
+  if (titulo.length > 60) titulo = titulo.slice(0, 60) + "…";
+  var lat = coords ? coords.lat : "";
+  var lng = coords ? coords.lng : "";
+
+  j.innerHTML =
+    '<div class="barra">' +
+      '<span class="titulo">📍 ' + titulo + '</span>' +
+      '<button class="btn-j" data-modo="sv"    title="Street View">🚶</button>' +
+      '<button class="btn-j" data-modo="sat"   title="Satélite">🛰</button>' +
+      '<button class="btn-j" data-modo="mapa"  title="Mapa">🗺</button>' +
+      '<button class="btn-j" data-acao="min"   title="Minimizar">—</button>' +
+      '<button class="btn-j" data-acao="fechar" title="Fechar">✕</button>' +
+    '</div>' +
+    '<div class="conteudo">' +
+      '<div class="alca"></div>' +
+    '</div>';
+
+  desktop.appendChild(j);
+  trazerFrente(j);
+
+  var conteudo = j.querySelector(".conteudo");
+  var alca = j.querySelector(".alca");
+
+  // --- os três modos, todos via embed público do Google (sem chave) ---
+  function src(modo) {
+    if (modo === "sv") {
+      // Street View: se temos coordenadas, ancoramos nelas (cbll);
+      // se não, deixamos o próprio Google geocodificar pelo q=
+      if (lat) {
+        return "https://maps.google.com/maps?layer=c&cbll=" + lat + "," + lng +
+          "&cbp=12,0,0,0,0&output=svembed";
+      }
+      return "https://maps.google.com/maps?q=" + encodeURIComponent(termo) +
+        "&layer=c&output=svembed";
+    }
+    var tipo = (modo === "sat") ? "k" : "m";
+    return "https://www.google.com/maps?q=" + encodeURIComponent(termo) +
+      "&output=embed&z=16&t=" + tipo;
+  }
+
+  var frame = null;
+  function setModo(modo) {
+    // limpa o conteúdo (menos a alça de redimensionar)
+    var nodes = conteudo.querySelectorAll("iframe, .overlay");
+    for (var i = 0; i < nodes.length; i++) nodes[i].remove();
+    frame = document.createElement("iframe");
+    frame.src = src(modo);
+    frame.setAttribute("allowfullscreen", "");
+    conteudo.insertBefore(frame, alca);
+    var ov = document.createElement("div");
+    ov.className = "overlay";
+    ov.innerHTML = "<span>👆 clique p/ interagir</span>";
+    ov.onclick = function () { this.remove(); };
+    conteudo.appendChild(ov);
+
+    // realça o botão do modo atual
+    var bs = j.querySelectorAll("[data-modo]");
+    for (var k = 0; k < bs.length; k++) {
+      bs[k].classList.toggle("modo-ativo", bs[k].getAttribute("data-modo") === modo);
+    }
+  }
+
+  // --- barra de título ---
+  var botoes = j.querySelectorAll(".btn-j");
+  for (var i = 0; i < botoes.length; i++) {
+    (function (b) {
+      var modo = b.getAttribute("data-modo");
+      var acao = b.getAttribute("data-acao");
+      if (modo) {
+        b.onclick = function (ev) { ev.stopPropagation(); setModo(modo); };
+      } else if (acao === "fechar") {
+        b.onclick = function (ev) { ev.stopPropagation(); j.remove(); };
+      } else if (acao === "min") {
+        b.onclick = function (ev) {
+          ev.stopPropagation();
+          j.style.display = (j.style.display === "none") ? "flex" : "none";
+        };
+      }
+    })(botoes[i]);
+  }
+
+  j.addEventListener("mousedown", function () { trazerFrente(j); });
+  ligarArrastar(j);
+  ligarRedimensionar(alca, j);
+
+  // Street View por padrão (a "realidade" que você pediu)
+  setModo("sv");
+}
+
+function ligarArrastar(j) {
+  var barra = j.querySelector(".barra");
+  barra.addEventListener("mousedown", function (e) {
+    if (e.target.tagName === "BUTTON") return;
+    var ox = e.clientX - j.offsetLeft;
+    var oy = e.clientY - j.offsetTop;
+    function mover(ev) {
+      j.style.left = Math.max(0, ev.clientX - ox) + "px";
+      j.style.top  = Math.max(0, ev.clientY - oy) + "px";
+    }
+    function soltar() {
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+    }
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
+  });
+}
+
+function ligarRedimensionar(alca, j) {
+  alca.addEventListener("mousedown", function (e) {
+    e.stopPropagation();
+    var sx = e.clientX, sy = e.clientY;
+    var sw = j.offsetWidth, sh = j.offsetHeight;
+    function mover(ev) {
+      j.style.width  = Math.max(300, sw + ev.clientX - sx) + "px";
+      j.style.height = Math.max(220, sh + ev.clientY - sy) + "px";
+    }
+    function soltar() {
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+    }
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
+  });
+}
+
+function pesquisar() {
+  var campo = document.getElementById("busca");
+  var termo = campo.value.trim();
+  if (!termo) return;
+  campo.value = "";
+  campo.focus();
+
+  // tenta pegar coordenadas exatas; se falhar, o Google resolve pelo nome
+  geocodificar(termo, function (coords) {
+    abrirJanela(termo, coords);
+  });
+}
+
+document.getElementById("busca").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") pesquisar();
+});
+</script>
+</body>
+</html>
+<------------------------------ee------------------------------>
+<div class="ee">
+
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOOGLE CRACK THE BEST</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #080d18;
+  color: white;
+  min-height: 100vh;
+  padding: 25px;
+}
+
+.container {
+  max-width: 850px;
+  margin: 35px auto;
+  background: #111b2c;
+  border: 1px solid #263b59;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 0 35px #0066ff22;
+}
+
+h1 {
+  text-align: center;
+  color: #39a9ff;
+  font-size: 30px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #a9bad0;
+  margin-bottom: 30px;
+}
+
+label {
+  display: block;
+  margin: 15px 0 7px;
+  color: #9ecfff;
+}
+
+input, select {
+  width: 100%;
+  padding: 13px;
+  border-radius: 8px;
+  border: 1px solid #354c6b;
+  background: #091321;
+  color: white;
+  font-size: 15px;
+}
+
+button {
+  padding: 13px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  background: #087cff;
+  color: white;
+  margin-top: 12px;
+}
+
+button:hover {
+  background: #0056c7;
+}
+
+.main-btn {
+  width: 100%;
+  font-size: 17px;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.buttons button {
+  margin: 0;
+}
+
+.original {
+  display: block;
+  text-align: center;
+  margin-top: 25px;
+  padding: 15px;
+  background: #172b42;
+  border-radius: 9px;
+  color: #56b7ff;
+  text-decoration: none;
+}
+
+.operators {
+  margin-top: 25px;
+  padding: 15px;
+  background: #091321;
+  border-radius: 10px;
+  color: #b6c9df;
+  font-size: 13px;
+  line-height: 2;
+}
+
+footer {
+  text-align: center;
+  margin-top: 25px;
+  color: #71869f;
+  font-size: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🔎 GOOGLE CRACK THE BEST</h1>
+
+<p class="subtitle">
+Advanced Search Engine | Pesquisa Inteligente
+</p>
+
+<label>O que pretendes pesquisar?</label>
+<input id="query" placeholder="Escreve a tua pesquisa...">
+
+<label>Frase exata</label>
+<input id="exact" placeholder="Ex: inteligência artificial">
+
+<label>Pesquisar num site específico</label>
+<input id="site" placeholder="Ex: wikipedia.org">
+
+<label>Excluir palavras</label>
+<input id="exclude" placeholder="Ex: publicidade anúncios">
+
+<label>Tipo de ficheiro</label>
+<select id="filetype">
+<option value="">Todos os ficheiros</option>
+<option value="pdf">PDF</option>
+<option value="docx">Word DOCX</option>
+<option value="xlsx">Excel XLSX</option>
+<option value="pptx">PowerPoint PPTX</option>
+<option value="txt">TXT</option>
+</select>
+
+<label>Período de publicação</label>
+<select id="period">
+<option value="">Qualquer data</option>
+<option value="d">Últimas 24 horas</option>
+<option value="w">Última semana</option>
+<option value="m">Último mês</option>
+<option value="y">Último ano</option>
+</select>
+
+<label>Tipo de pesquisa</label>
+<select id="type">
+<option value="web">Pesquisa Web</option>
+<option value="images">Imagens</option>
+<option value="videos">Vídeos</option>
+<option value="news">Notícias</option>
+</select>
+
+<button class="main-btn" onclick="searchGoogle()">
+🚀 INICIAR PESQUISA AVANÇADA
+</button>
+
+<div class="buttons">
+<button onclick="quickSearch('site:')">Pesquisa por site</button>
+<button onclick="quickSearch('filetype:pdf')">Documentos PDF</button>
+<button onclick="quickSearch('intitle:')">Pesquisa por título</button>
+<button onclick="quickSearch('inurl:')">Pesquisa por URL</button>
+</div>
+
+<div class="operators">
+<strong>OPERADORES DE PESQUISA</strong><br>
+"frase exata" — procurar frase exata<br>
+site:dominio.com — pesquisar num site<br>
+filetype:pdf — encontrar documentos PDF<br>
+intitle:palavra — procurar no título<br>
+inurl:palavra — procurar na URL<br>
+-palavra — excluir palavras<br>
+OR — procurar alternativas
+</div>
+
+<a class="original"
+href="https://www.google.com/search?uid=1&timestamp=29895439&hash=e6d7337305d2104b2759d45aef0305431a8c278e4b991b174bc60e0e79f4286c"
+target="_blank" rel="noopener">
+🌐 GOOGLE ORIGINAL — GO!
+</a>
+
+<footer>
+GOOGLE CRACK THE BEST © 2026
+</footer>
+
+</div>
+
+<script>
+function searchGoogle() {
+
+  const query = document.getElementById("query").value.trim();
+  const exact = document.getElementById("exact").value.trim();
+  const site = document.getElementById("site").value.trim();
+  const exclude = document.getElementById("exclude").value.trim();
+  const filetype = document.getElementById("filetype").value;
+  const period = document.getElementById("period").value;
+  const type = document.getElementById("type").value;
+
+  if (!query && !exact) {
+    alert("Introduz algo para pesquisar!");
+    return;
+  }
+
+  let search = query;
+
+  if (exact) search += ' "' + exact + '"';
+  if (site) search += ' site:' + site;
+  if (filetype) search += ' filetype:' + filetype;
+
+  if (exclude) {
+    exclude.split(/\s+/).forEach(word => {
+      search += ' -' + word;
+    });
+  }
+
+  const url = new URL("https://www.google.com/search");
+
+  url.searchParams.set("q", search);
+
+  if (period) {
+    url.searchParams.set("tbs", "qdr:" + period);
+  }
+
+  if (type === "images") {
+    url.searchParams.set("udm", "2");
+  }
+
+  if (type === "videos") {
+    url.searchParams.set("udm", "7");
+  }
+
+  if (type === "news") {
+    url.searchParams.set("tbm", "nws");
+  }
+
+  window.open(url.toString(), "_blank");
+}
+
+function quickSearch(operator) {
+  const input = document.getElementById("query");
+  input.value = operator + " ";
+  input.focus();
+}
+const ee = document.getElementById("ee");
+</script>
+
+</body>
+</html>
+</div>
