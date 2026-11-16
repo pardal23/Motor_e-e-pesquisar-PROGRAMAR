@@ -1,0 +1,148 @@
+<e id="e-e+e">
+
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pesquisador de Links — Profundidade 30</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 24px; }
+    .container { max-width: 900px; margin: auto; }
+    .titulo { text-align: center; color: #38bdf8; }
+    .painel-pesquisa { background: #1e293b; padding: 16px; border-radius: 12px; margin-bottom: 16px; }
+    #campo-url { width: 65%; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; }
+    .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .btn-iniciar { background: #38bdf8; color: #0f172a; }
+    .btn-parar { background: #f87171; color: #fff; }
+    .info { margin-top: 10px; font-size: 14px; color: #94a3b8; }
+    .resultados { background: #1e293b; padding: 16px; border-radius: 12px; max-height: 60vh; overflow-y: auto; }
+    .link-item { padding: 6px; border-bottom: 1px solid #334155; word-break: break-all; font-size: 14px; }
+    .link-item a { color: #7dd3fc; text-decoration: none; }
+    .nivel-tag { color: #fbbf24; font-weight: bold; margin-right: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <h1 class="titulo">🔎 Pesquisador de Links (profundidade até 30)</h1>
+
+    <div class="painel-pesquisa">
+      <input id="campo-url" type="url" placeholder="https://exemplo.com" />
+      <button class="btn btn-iniciar" id="botao-iniciar">Pesquisar</button>
+      <button class="btn btn-parar" id="botao-parar">Parar</button>
+      <div class="info">
+        <span id="contador-visitados">Visitados: 0</span> |
+        <span id="contador-niveis">Nível: 0 / 30</span>
+      </div>
+    </div>
+
+    <div class="resultados">
+      <ul id="lista-links" class="lista-links"></ul>
+    </div>
+
+  </div>
+
+<script>
+// ===== Configuração =====
+const PROFUNDIDADE_MAXIMA = 30;
+const LIMITE_PAGINAS = 500; // proteção contra páginas gigantes
+const PROXY = "https://api.allorigins.win/raw?url="; // contorna CORS
+
+// ===== Elementos (id e class) =====
+const campoUrl = document.getElementById("campo-url");
+const lista = document.getElementById("lista-links");
+const contVisitados = document.getElementById("contador-visitados");
+const contNiveis = document.getElementById("contador-niveis");
+
+let parar = false;
+
+document.getElementById("botao-iniciar").addEventListener("click", iniciar);
+document.getElementById("botao-parar").addEventListener("click", () => { parar = true; });
+
+function normalizar(url) {
+  try {
+    const u = new URL(url);
+    u.hash = "";
+    return u.href;
+  } catch { return null; }
+}
+
+function adicionarLink(url, nivel) {
+  const li = document.createElement("li");
+  li.className = "link-item";
+  const tag = document.createElement("span");
+  tag.className = "nivel-tag";
+  tag.textContent = `[nível ${nivel}]`;
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.textContent = url;
+  li.appendChild(tag);
+  li.appendChild(a);
+  lista.appendChild(li);
+}
+
+async function buscarHTML(url) {
+  const resposta = await fetch(PROXY + encodeURIComponent(url));
+  if (!resposta.ok) throw new Error("HTTP " + resposta.status);
+  return await resposta.text();
+}
+
+function extrairLinks(html, urlBase) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const links = [];
+  doc.querySelectorAll("a[href]").forEach(a => {
+    try {
+      const absoluto = new URL(a.getAttribute("href"), urlBase).href;
+      if (absoluto.startsWith("http")) links.push(absoluto);
+    } catch { /* ignora links inválidos */ }
+  });
+  return links;
+}
+
+function dormir(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function iniciar() {
+  const inicial = normalizar(campoUrl.value.trim());
+  if (!inicial) { alert("Introduza um URL válido."); return; }
+
+  parar = false;
+  lista.innerHTML = "";
+  const visitados = new Set();
+  let fila = [{ url: inicial, nivel: 0 }];
+  let total = 0;
+
+  while (fila.length && !parar) {
+    const proximaFila = [];
+
+    for (const { url, nivel } of fila) {
+      if (parar || total >= LIMITE_PAGINAS) break;
+      if (visitados.has(url) || nivel > PROFUNDIDADE_MAXIMA) continue;
+      visitados.add(url);
+      total++;
+      contVisitados.textContent = "Visitados: " + total;
+      contNiveis.textContent = "Nível: " + nivel + " / " + PROFUNDIDADE_MAXIMA;
+
+      try {
+        const html = await buscarHTML(url);
+        adicionarLink(url, nivel);
+        const links = extrairLinks(html, url);
+        for (const l of links) {
+          if (!visitados.has(l)) proximaFila.push({ url: l, nivel: nivel + 1 });
+        }
+      } catch (erro) {
+        console.warn("Falhou:", url, erro.message);
+      }
+      await dormir(150); // pausa educada entre pedidos
+    }
+    fila = proximaFila;
+  }
+}
+const e-e+e = document.getElementById("e-e+e");
+</script>
+</body>
+</html>
+</e>
