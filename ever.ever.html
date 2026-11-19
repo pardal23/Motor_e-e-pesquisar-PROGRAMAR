@@ -1,0 +1,215 @@
+
+
+
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <title>EVER OS — Motor Universal</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { margin: 0; background: #090d16; color: #f8fafc; display: flex; flex-direction: column; height: 100vh; }
+    header { background: #111827; padding: 12px 20px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    header h1 { margin: 0; font-size: 1.1rem; color: #38bdf8; }
+    .acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+    button, label.btn { background: #2563eb; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.9rem; display: inline-block; }
+    button:hover, label.btn:hover { background: #1d4ed8; }
+    button.verde { background: #059669; }
+    button.roxo { background: #7c3aed; }
+    
+    .main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; overflow: hidden; }
+    textarea { width: 100%; height: 100%; background: #0b0f19; color: #38bdf8; border: none; border-right: 1px solid #1e293b; padding: 18px; font-family: 'Consolas', monospace; font-size: 14px; line-height: 1.6; resize: none; outline: none; }
+    
+    .painel-direito { display: flex; flex-direction: column; padding: 20px; overflow-y: auto; background: #0f172a; }
+    #botoes-app { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+    #ecra { font-size: 1.15rem; line-height: 1.6; }
+    .caixa-ficheiro { background: #1e293b; border: 1px solid #334155; padding: 14px; border-radius: 10px; margin-top: 12px; }
+    .caixa-ficheiro pre { background: #090d16; padding: 10px; border-radius: 6px; overflow-x: auto; color: #a7f3d0; font-size: 13px; }
+    .caixa-ficheiro img { max-width: 100%; border-radius: 8px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ LINGUAGEM .EVER (Executor Universal)</h1>
+  <div class="acoes">
+    <label class="btn roxo">
+      📂 Abrir Qualquer Ficheiro
+      <input type="file" id="abrir-qualquer" multiple style="display:none">
+    </label>
+    <button class="verde" onclick="rodar()">▶ Executar Código</button>
+    <button onclick="guardarEver()">💾 Guardar .ever</button>
+  </div>
+</header>
+
+<div class="main">
+  <!-- EDITOR DE CÓDIGO .EVER -->
+  <textarea id="codigo" spellcheck="false">titulo "Sistema .ever Radical"
+
+e234 = 234
+e34 = 34
+ver "Conta instantânea: <b>" + (e234 * e34) + "</b>"
+ver "Escreve código aqui à esquerda ou abre qualquer ficheiro do teu PC!"
+
+cliques = 0
+botao "Somar +1" {
+  cliques = cliques + 1
+  som 600
+  ver "Cliques atuais: " + cliques
+}
+
+botao "Abrir Ficheiros do PC" {
+  abrir
+}
+
+botao "Limpar Ecrã" {
+  limpar
+}
+
+botao "abrir links filho" {
+  abrir
+}
+botao "mostrar base dados" {
+  mostrar
+}
+botao "encontrar documentos index e contactos email telefone login" {
+  executar
+}</textarea>
+
+  <!-- ECRÃ DE EXECUÇÃO -->
+  <div class="painel-direito">
+    <div id="botoes-app"></div>
+    <div id="ecra"></div>
+  </div>
+</div>
+
+<script>
+  const editor = document.getElementById("codigo");
+  const ecra = document.getElementById("ecra");
+  const areaBotoes = document.getElementById("botoes-app");
+  const inputFicheiros = document.getElementById("abrir-qualquer");
+
+  // 1. LEITOR UNIVERSAL DE FICHEIROS (Abre .ever, textos, códigos, imagens, JSON, etc.)
+  inputFicheiros.addEventListener("change", function() {
+    processarListaFicheiros(this.files);
+    this.value = "";
+  });
+
+  window.addEventListener("dragover", e => e.preventDefault());
+  window.addEventListener("drop", e => {
+    e.preventDefault();
+    processarListaFicheiros(e.dataTransfer.files);
+  });
+
+  function processarListaFicheiros(fileList) {
+    for (let i = 0; i < fileList.length; i++) {
+      const f = fileList.item(i);
+      if (!f) continue;
+
+      // Se for um ficheiro .ever, carrega no editor e executa na hora
+      if (f.name.endsWith(".ever")) {
+        const r = new FileReader();
+        r.onload = ev => {
+          editor.value = ev.target.result;
+          rodar();
+        };
+        r.readAsText(f);
+        continue;
+      }
+
+      // Se for imagem, mostra a imagem no ecrã .ever
+      if (f.type.startsWith("image/")) {
+        const url = URL.createObjectURL(f);
+        const box = document.createElement("div");
+        box.className = "caixa-ficheiro";
+        box.innerHTML = `<b>🖼️ Imagem aberta:</b> ${f.name} (${Math.round(f.size/1024)} KB)<br><img src="${url}">`;
+        ecra.appendChild(box);
+        continue;
+      }
+
+      // Para qualquer outro ficheiro (JS, HTML, TXT, JSON, CSV, etc.), lê e mostra o conteúdo
+      const r = new FileReader();
+      r.onload = ev => {
+        const box = document.createElement("div");
+        box.className = "caixa-ficheiro";
+        const textoSeguro = ev.target.result.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        box.innerHTML = `<b>📄 Ficheiro aberto:</b> ${f.name} (${f.size} bytes)<pre>${textoSeguro}</pre>`;
+        ecra.appendChild(box);
+      };
+      r.readAsText(f);
+    }
+  }
+
+  // 2. MOTOR DA LINGUAGEM .EVER
+  function rodar() {
+    ecra.innerHTML = "";
+    areaBotoes.innerHTML = "";
+    const vars = {};
+
+    const ver = (t) => { const d = document.createElement("div"); d.innerHTML = t; ecra.appendChild(d); };
+    const limpar = () => { ecra.innerHTML = ""; };
+    const som = (freq = 500) => {
+      const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator();
+      o.frequency.value = freq; o.connect(c.destination); o.start(); o.stop(c.currentTime + 0.1);
+    };
+
+    const calc = (exp) => {
+      try {
+        return new Function(...Object.keys(vars), "return (" + exp + ");")(...Object.values(vars));
+      } catch {
+        return exp;
+      }
+    };
+
+    const linhas = editor.value.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith("//"));
+
+    function executarBloco(lista) {
+      for (let j = 0; j < lista.length; j++) {
+        const l = lista[j];
+        if (l === "limpar") { limpar(); continue; }
+        if (l === "abrir") { inputFicheiros.click(); continue; }
+        if (l.startsWith("som ")) { som(Number(calc(l.slice(4)))); continue; }
+        if (l.startsWith("titulo ")) { ver(`<h2 style="color:#38bdf8; margin-top:0;">${calc(l.slice(7))}</h2>`); continue; }
+        if (l.startsWith("ver ")) { ver(calc(l.slice(4))); continue; }
+
+        if (l.startsWith("botao ") && l.endsWith("{")) {
+          const label = calc(l.slice(6, -1).trim());
+          const subBloco = [];
+          j++;
+          while (j < lista.length && lista[j] !== "}") {
+            subBloco.push(lista[j]);
+            j++;
+          }
+          const btn = document.createElement("button");
+          btn.textContent = label;
+          btn.onclick = () => executarBloco(subBloco);
+          areaBotoes.appendChild(btn);
+          continue;
+        }
+
+        if (l.includes("=")) {
+          const pos = l.indexOf("=");
+          const nome = l.slice(0, pos).trim();
+          const exp = l.slice(pos + 1).trim();
+          vars[nome] = calc(exp);
+        }
+      }
+    }
+
+    executarBloco(linhas);
+  }
+
+  // 3. GUARDAR COMO FICHEIRO .EVER REAL NO PC
+  function guardarEver() {
+    const blob = new Blob([editor.value], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "programa.ever";
+    a.click();
+  }
+
+  window.onload = rodar;
+</script>
+
+</body>
+</html>
