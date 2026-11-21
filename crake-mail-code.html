@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Espiritual Cegonha - Email</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f3f5f1;
+    color: #344638;
+}
+header {
+    background: #405d49;
+    color: white;
+    padding: 25px;
+    text-align: center;
+}
+main {
+    max-width: 750px;
+    margin: 30px auto;
+    padding: 15px;
+}
+section {
+    background: white;
+    padding: 22px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+}
+button, .link {
+    display: inline-block;
+    background: #405d49;
+    color: white;
+    padding: 12px 18px;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    margin: 5px 0;
+}
+input, textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+textarea { min-height: 120px; }
+#status { padding: 10px; }
+</style>
+
+</head>
+<body>
+
+<header>
+    <h1>Espiritual Cegonha</h1>
+    <p>Painel de comunicação</p>
+</header>
+
+<main>
+
+<section>
+    <h2>O meu Gmail</h2>
+    <p>j89617408jesus@gmail.com</p>
+
+    <a class="link"
+       href="https://mail.google.com/mail/u/0/#inbox"
+       target="_blank"
+       rel="noopener noreferrer">
+       Abrir caixa de entrada Gmail
+    </a>
+</section>
+
+<section>
+    <h2>Enviar mensagem</h2>
+
+    <form id="contactForm">
+
+        <input id="nome"
+               placeholder="O teu nome"
+               required>
+
+        <input id="email"
+               type="email"
+               placeholder="O teu email"
+               required>
+
+        <input id="assunto"
+               placeholder="Assunto"
+               required>
+
+        <textarea id="mensagem"
+                  placeholder="Escreve a tua mensagem"
+                  required></textarea>
+
+        <button type="submit">Enviar mensagem</button>
+
+    </form>
+
+    <p id="status"></p>
+</section>
+
+<section>
+    <h2>Consultar mensagens</h2>
+    <p>
+        Para ler e responder aos emails, abre a tua caixa
+        de entrada através do botão abaixo.
+    </p>
+
+    <a class="link"
+       href="https://mail.google.com/mail/u/0/#inbox"
+       target="_blank"
+       rel="noopener noreferrer">
+       Consultar emails recebidos
+    </a>
+</section>
+
+</main>
+
+<script>
+/*
+ CONFIGURAÇÃO EMAILJS
+
+ Cria uma conta em https://www.emailjs.com/
+ Liga o Gmail e configura um template.
+*/
+
+const EMAIL_CONFIG = {
+    PUBLIC_KEY: "+331 73 03 34 04",
+    SERVICE_ID: "INSERE_SERVICE_ID",
+    TEMPLATE_ID: "INSERE_TEMPLATE_ID",
+    DESTINATION: "j89617408jesus@gmail.com"
+};
+
+const form = document.getElementById("contactForm");
+
+form.addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const status = document.getElementById("status");
+    const button = form.querySelector("button");
+
+    button.disabled = true;
+    status.textContent = "A enviar mensagem...";
+
+    try {
+        if (!window.emailjs) {
+            throw new Error("Serviço de email não carregado.");
+        }
+
+        await emailjs.send(
+            EMAIL_CONFIG.SERVICE_ID,
+            EMAIL_CONFIG.TEMPLATE_ID,
+            {
+                from_name: document.getElementById("nome").value,
+                reply_to: document.getElementById("email").value,
+                subject: document.getElementById("assunto").value,
+                message: document.getElementById("mensagem").value,
+                to_email: EMAIL_CONFIG.DESTINATION
+            }
+        );
+
+        status.textContent = "Mensagem enviada com sucesso!";
+        form.reset();
+
+    } catch(error) {
+        console.error(error);
+        status.textContent = "Erro no envio. Verifica a configuração EmailJS.";
+    }
+
+    button.disabled = false;
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<script>
+window.addEventListener("load", function() {
+    if (window.emailjs &&
+        EMAIL_CONFIG.PUBLIC_KEY !== "INSERE_PUBLIC_KEY") {
+        emailjs.init({
+            publicKey: EMAIL_CONFIG.PUBLIC_KEY
+        });
+    }
+});
+</script>
+
+</body>
+</html>
